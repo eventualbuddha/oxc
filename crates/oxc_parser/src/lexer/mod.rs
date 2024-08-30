@@ -329,13 +329,16 @@ impl<'a> Lexer<'a> {
 
             // SAFETY: `byte` is byte value at current position in source
             match unsafe { handle_byte(byte, self) } {
-                kind @ (Kind::CommentLine | Kind::CommentBlock) => {
+                Kind::CommentLine => {
                     comments.push(Comment {
-                        kind: match kind {
-                            Kind::CommentLine => CommentKind::SingleLine,
-                            Kind::CommentBlock => CommentKind::MultiLine,
-                            _ => unreachable!(),
-                        },
+                        kind: CommentKind::SingleLine,
+                        span: Span::new(self.token.start, self.offset() - 1),
+                    });
+                    continue;
+                }
+                Kind::CommentBlock => {
+                    comments.push(Comment {
+                        kind: CommentKind::MultiLine,
                         span: Span::new(self.token.start, self.offset()),
                     });
                     continue;
