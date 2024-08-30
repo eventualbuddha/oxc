@@ -45,7 +45,7 @@ pub use self::{
     number::{parse_big_int, parse_float, parse_int},
     token::Token,
 };
-use crate::{diagnostics, UniquePromise};
+use crate::{comments::CommentWhitespace, diagnostics, UniquePromise};
 
 #[derive(Debug, Clone, Copy)]
 pub struct LexerCheckpoint<'a> {
@@ -97,6 +97,8 @@ pub struct Lexer<'a> {
 
     /// `memchr` Finder for end of multi-line comments. Created lazily when first used.
     multi_line_comment_end_finder: Option<memchr::memmem::Finder<'static>>,
+
+    pub(crate) comment_stack: Vec<CommentWhitespace<'a>>,
 }
 
 #[allow(clippy::unused_self)]
@@ -127,6 +129,7 @@ impl<'a> Lexer<'a> {
             escaped_strings: FxHashMap::default(),
             escaped_templates: FxHashMap::default(),
             multi_line_comment_end_finder: None,
+            comment_stack: vec![],
         }
     }
 

@@ -44,6 +44,7 @@
 
 #![allow(clippy::wildcard_imports)] // allow for use `oxc_ast::ast::*`
 
+mod comments;
 mod context;
 mod cursor;
 mod modifiers;
