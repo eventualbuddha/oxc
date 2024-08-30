@@ -30,7 +30,10 @@ mod whitespace;
 use std::collections::VecDeque;
 
 use oxc_allocator::Allocator;
-use oxc_ast::ast::RegExpFlags;
+use oxc_ast::{
+    ast::RegExpFlags,
+    {Comment, CommentKind},
+};
 use oxc_diagnostics::OxcDiagnostic;
 use oxc_span::{SourceType, Span};
 use rustc_hash::FxHashMap;
@@ -314,20 +317,41 @@ impl<'a> Lexer<'a> {
     /// Read each char and set the current token
     /// Whitespace and line terminators are skipped
     fn read_next_token(&mut self) -> Kind {
-        loop {
+        let start = self.offset();
+        let mut comments = vec![];
+        let kind = loop {
             let offset = self.offset();
             self.token.start = offset;
 
             let Some(byte) = self.peek_byte() else {
-                return Kind::Eof;
+                break Kind::Eof;
             };
 
             // SAFETY: `byte` is byte value at current position in source
-            let kind = unsafe { handle_byte(byte, self) };
-            if kind != Kind::Skip {
-                return kind;
+            match unsafe { handle_byte(byte, self) } {
+                kind @ (Kind::CommentLine | Kind::CommentBlock) => {
+                    comments.push(Comment {
+                        kind: match kind {
+                            Kind::CommentLine => CommentKind::SingleLine,
+                            Kind::CommentBlock => CommentKind::MultiLine,
+                            _ => unreachable!(),
+                        },
+                        span: Span::new(self.token.start, self.offset()),
+                    });
+                    continue;
+                }
+                Kind::Skip => {
+                    continue;
+                }
+                kind => break kind,
             }
+        };
+
+        if !comments.is_empty() {
+            self.comment_stack.push(CommentWhitespace::new(start, self.offset(), comments));
         }
+
+        kind
     }
 }
 
