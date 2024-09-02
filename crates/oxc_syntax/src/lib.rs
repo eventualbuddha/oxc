@@ -13,3 +13,5 @@ pub mod reference;
 pub mod scope;
 pub mod symbol;
 pub mod xml_entities;
+
+pub mod nonmax;
