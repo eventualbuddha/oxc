@@ -167,6 +167,7 @@ impl Generator for AstKindGenerator {
                         } else {
                             None
                         }
+                        // Dummy comment to re-run benchmarks
                     }
                 )
             })
